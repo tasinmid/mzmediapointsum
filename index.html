@@ -14,7 +14,6 @@
       --button-bg: #444;
       --button-hover: #555;
       --accent: #bb86fc;
-      --success: #a7ffeb;
       --error: #cf6679;
     }
 
@@ -112,13 +111,18 @@
       color: var(--error);
     }
 
-    .success {
-      color: var(--success);
+    .points {
+      font-size: 1.8rem;
+      color: var(--accent);
+      font-weight: 500;
     }
 
     @media (max-width: 600px) {
       .container {
         width: 95%;
+      }
+      .points {
+        font-size: 1.5rem;
       }
     }
   </style>
@@ -172,16 +176,11 @@
         return;
       }
 
-      // Show loading state
-      resultText.textContent = 'Sending request...';
+      // Show loading
+      resultText.textContent = 'Calculating...';
       resultText.className = 'loading';
       resultDiv.className = 'result show';
       btn.disabled = true;
-
-      const payload = {
-        team: team,
-        month: month
-      };
 
       try {
         const response = await fetch('https://n8n.mzmedia.cloud/webhook-test/5bd1bcce-2fd9-4c2d-a42a-7c4dd97b3d56', {
@@ -189,7 +188,7 @@
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({ team, month })
         });
 
         if (!response.ok) {
@@ -198,36 +197,15 @@
 
         const data = await response.json();
 
-        // Format success message
-        const teamLabel = {
-          ashraful: "Team Ashraful",
-          faravi: "Team Faravi",
-          aiman: "Team Aiman"
-        }[team] || team;
-
-        const monthLabel = {
-          jan: "January",
-          feb: "February",
-          sept: "September",
-          oct: "October",
-          nov: "November",
-          dec: "December"
-        }[month] || month;
-
-        let message = `✅ Request sent successfully!<br>
-                       Team: <strong>${teamLabel}</strong><br>
-                       Month: <strong>${monthLabel}</strong>`;
-
-        // Optionally display server response
-        if (data && Object.keys(data).length > 0) {
-          message += `<br><br><small>Response: ${JSON.stringify(data)}</small>`;
+        // Expecting { "totalPoints": 804 }
+        if (typeof data.totalPoints === 'number' || typeof data.totalPoints === 'string') {
+          resultText.innerHTML = `<span class="points">${data.totalPoints} Points</span>`;
+        } else {
+          throw new Error('Invalid response format: missing totalPoints');
         }
-
-        resultText.innerHTML = message;
-        resultText.className = 'success';
       } catch (error) {
         console.error('Error:', error);
-        resultText.innerHTML = `❌ Failed to send request.<br>${error.message || 'Please check your connection.'}`;
+        resultText.textContent = 'Failed to load performance data.';
         resultText.className = 'error';
       } finally {
         btn.disabled = false;
@@ -236,3 +214,4 @@
   </script>
 </body>
 </html>
+
