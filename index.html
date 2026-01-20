@@ -135,9 +135,9 @@
       <label for="teamSelect">Select Team</label>
       <select id="teamSelect">
         <option value="">-- Choose a team --</option>
-        <option value="ashraful">Team Ashraful</option>
-        <option value="faravi">Team Faravi</option>
-        <option value="aiman">Team Aiman</option>
+        <option value="ion">Ion</option>
+        <option value="echo">Echo</option>
+        <option value="cell">Cell</option>
       </select>
     </div>
 
@@ -197,11 +197,10 @@
 
         const data = await response.json();
 
-        // Expecting { "totalPoints": 804 }
         if (typeof data.totalPoints === 'number' || typeof data.totalPoints === 'string') {
           resultText.innerHTML = `<span class="points">${data.totalPoints} Points</span>`;
         } else {
-          throw new Error('Invalid response format: missing totalPoints');
+          throw new Error('Invalid response: totalPoints missing');
         }
       } catch (error) {
         console.error('Error:', error);
@@ -214,4 +213,3 @@
   </script>
 </body>
 </html>
-
