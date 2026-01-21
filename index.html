@@ -57,6 +57,10 @@
       font-size: 1.1rem;
     }
 
+    select, input[type="checkbox"] {
+      font-family: 'Fredoka', sans-serif;
+    }
+
     select {
       width: 100%;
       padding: 12px;
@@ -64,8 +68,20 @@
       border: 1px solid var(--input-border);
       border-radius: 6px;
       color: var(--text-color);
-      font-family: 'Fredoka', sans-serif;
       font-size: 1rem;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .checkbox-group input {
+      transform: scale(1.2);
+      cursor: pointer;
     }
 
     .btn-calculate {
@@ -73,7 +89,6 @@
       color: var(--text-color);
       border: none;
       padding: 8px 24px;
-      font-family: 'Fredoka', sans-serif;
       font-size: 1rem;
       border-radius: 4px;
       cursor: pointer;
@@ -124,6 +139,10 @@
       .points {
         font-size: 1.5rem;
       }
+      .checkbox-group {
+        flex-direction: column;
+        gap: 6px;
+      }
     }
   </style>
 </head>
@@ -147,11 +166,26 @@
         <option value="">-- Choose a month --</option>
         <option value="jan">January</option>
         <option value="feb">February</option>
+        <option value="march">March</option>
+        <option value="april">April</option>
+        <option value="may">May</option>
+        <option value="june">June</option>
+        <option value="july">July</option>
+        <option value="august">August</option>
         <option value="sept">September</option>
-        <option value="oct">October</option>
-        <option value="nov">November</option>
+        <option value="october">October</option>
+        <option value="november">November</option>
         <option value="dec">December</option>
       </select>
+    </div>
+
+    <div class="form-group">
+      <label for="yearSelect">Select Year</label>
+      <select id="yearSelect"></select>
+      <div class="checkbox-group">
+        <input type="checkbox" id="noYearToggle">
+        <label for="noYearToggle" style="margin: 0; font-size: 1rem;">No Year</label>
+      </div>
     </div>
 
     <button class="btn-calculate" id="calculateBtn" onclick="calculatePerformance()">Calculate</button>
@@ -162,33 +196,81 @@
   </div>
 
   <script>
+    const TEAM_ID_MAP = {
+      echo: "901804133006",
+      ion: "901804133002",
+      cell: "901804132999"
+    };
+
+    function initYearSelect() {
+      const yearSelect = document.getElementById('yearSelect');
+      const startYear = 2023;
+      const currentYear = new Date().getFullYear();
+      const endYear = currentYear + 10;
+
+      let options = '<option value="">-- Choose a year --</option>';
+      for (let year = startYear; year <= endYear; year++) {
+        const selected = year === currentYear ? 'selected' : '';
+        options += `<option value="${year}" ${selected}>${year}</option>`;
+      }
+      yearSelect.innerHTML = options;
+    }
+
+    document.getElementById('noYearToggle').addEventListener('change', function () {
+      const yearSelect = document.getElementById('yearSelect');
+      yearSelect.disabled = this.checked;
+      if (this.checked) yearSelect.value = '';
+    });
+
+    document.addEventListener('DOMContentLoaded', initYearSelect);
+
     async function calculatePerformance() {
-      const team = document.getElementById('teamSelect').value;
+      const teamKey = document.getElementById('teamSelect').value;
       const month = document.getElementById('monthSelect').value;
+      const noYear = document.getElementById('noYearToggle').checked;
+      const yearSelect = document.getElementById('yearSelect');
       const resultDiv = document.getElementById('result');
       const resultText = document.getElementById('resultText');
       const btn = document.getElementById('calculateBtn');
 
-      if (!team || !month) {
-        resultText.textContent = 'Please select both a team and a month.';
+      if (!teamKey || !month) {
+        resultText.textContent = 'Please select team and month.';
         resultText.className = 'error';
         resultDiv.className = 'result show';
         return;
       }
 
-      // Show loading
+      // Validate year only if "No Year" is NOT checked
+      if (!noYear && !yearSelect.value) {
+        resultText.textContent = 'Please select a year or enable "No Year".';
+        resultText.className = 'error';
+        resultDiv.className = 'result show';
+        return;
+      }
+
       resultText.textContent = 'Calculating...';
       resultText.className = 'loading';
       resultDiv.className = 'result show';
       btn.disabled = true;
 
       try {
-        const response = await fetch('https://n8n.mzmedia.cloud/webhook/5bd1bcce-2fd9-4c2d-a42a-7c4dd97b3d56', {
+        // Build payload dynamically
+        const payload = {
+          team: TEAM_ID_MAP[teamKey],
+          month: month
+        };
+
+        // Only add year if "No Year" is OFF
+        if (!noYear) {
+          payload.year = yearSelect.value; // string, e.g., "2026"
+        }
+
+        const response = await fetch('https://n8n.mzmedia.cloud/webhook-test/5bd1bcce-2fd9-4c2d-a42a-7c4dd97b3d56', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ team, month })
+          body: JSON.stringify(payload)
         });
 
         if (!response.ok) {
